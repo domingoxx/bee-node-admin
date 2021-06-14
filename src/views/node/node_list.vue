@@ -16,7 +16,9 @@
       </el-button>
       
     </div>
-
+    <p>
+      总节点：{{nodeStat.totalCount}}个节点，在线：{{nodeStat.onlineCount}}个节点，总支票：{{nodeStat.chequeTotalCount}}张，有效支票：{{nodeStat.chequeValidCount}}张
+    </p>
     <el-table
       v-loading="listLoading"
       :data="page.records"
@@ -62,7 +64,7 @@
 
       <el-table-column label="状态" align="center">
         <template slot-scope="scope">
-          {{ scope.row.status | statusFilter }}
+          <span>{{ scope.row.status | statusFilter }}</span>
           /
           {{ scope.row.store.healthStatus ? scope.row.store.healthStatus.status : ''}}
         </template>
@@ -76,7 +78,7 @@
         </template>
       </el-table-column>
     </el-table>
-<pagination v-show="page.total>0" :total="page.total" :page.sync="page.pages" :limit.sync="page.size" @pagination="fetchData" />
+<pagination v-show="page.total>0" :total="page.total" :page.sync="page.page" :limit.sync="page.size" @pagination="fetchData" />
 
   <el-dialog v-el-drag-dialog :visible.sync="dialogVisible" title="编辑配置项" >
       <el-form ref="editForm" :model="editForm" :rules="editFormValidate" autocomplete="on" label-width="120px">
@@ -135,6 +137,9 @@ export default {
         size: 10,
         total: 0,
       },
+      nodeStat: {
+
+      },
       editForm: {},
       editFormValidate: {
         value: [
@@ -158,8 +163,9 @@ export default {
     fetchData() {
       this.listLoading = true
       getNodePage(this.query, this.page.page, this.page.size).then(response => {
-        this.page.records = response.result.records
-        this.page.total = response.result.total
+        this.page.records = response.result.pageInfo.records
+        this.page.total = response.result.pageInfo.total
+        this.nodeStat = response.result.nodeStat
         this.listLoading = false
       })
     },
