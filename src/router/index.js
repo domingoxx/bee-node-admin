@@ -52,6 +52,12 @@ export const constantRoutes = [
       name: '节点列表',
       component: () => import('@/views/node/node_list'),
       meta: { title: '节点列表', icon: 'table' }
+    },{
+      path: '/node/detail/:id(\\d+)',
+      component: () => import('@/views/node/node_detail'),
+      name: '节点详情',
+      meta: { title: '节点详情', noCache: true, activeMenu: '/node/list' },
+      hidden: true
     }]
   },
 

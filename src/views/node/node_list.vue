@@ -1,23 +1,19 @@
 <template>
   <div class="app-container">
-    
-<div class="filter-container">
+    <div class="filter-container">
       <el-input v-model="query.localSerialNumber" placeholder="节点编号" style="width: 150px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-input v-model="query.machineGroup" placeholder="分组" style="width: 150px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-input v-model="query.machineName" placeholder="机器名称" style="width: 150px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-input v-model="query.beeVersion" placeholder="版本号" style="width: 100px;" class="filter-item" @keyup.enter.native="handleFilter" />
-      
       <el-select v-model="query.status" placeholder="状态" clearable style="width: 90px" class="filter-item">
         <el-option v-for="item in statusOptions" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
-      
       <el-button v-waves class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
         搜索
       </el-button>
-      
     </div>
     <p>
-      总节点：{{nodeStat.totalCount}}个节点，在线：{{nodeStat.onlineCount}}个节点，总支票：{{nodeStat.chequeTotalCount}}张，有效支票：{{nodeStat.chequeValidCount}}张
+      总节点：{{ nodeStat.totalCount }}个节点，在线：{{ nodeStat.onlineCount }}个节点，总支票：{{ nodeStat.chequeTotalCount }}张，有效支票：{{ nodeStat.chequeValidCount }}张
     </p>
     <el-table
       v-loading="listLoading"
@@ -27,7 +23,6 @@
       fit
       highlight-current-row
     >
-
       <el-table-column label="节点编号" align="center" width="150">
         <template slot-scope="scope">
           {{ scope.row.localSerialNumber }}
@@ -46,7 +41,7 @@
         </template>
       </el-table-column>
 
-      <el-table-column label="连接数" align="center" >
+      <el-table-column label="连接数" align="center">
         <template slot-scope="scope">
           {{ scope.row.store.peersCount }}
         </template>
@@ -55,9 +50,9 @@
       <el-table-column label="支票" align="center">
         <template slot-scope="scope">
           <span v-if="scope.row.store.chequeCount != null">
-            {{scope.row.store.chequeCount.validTotal}}
+            {{ scope.row.store.chequeCount.validTotal }}
             /
-            {{scope.row.store.chequeCount.total}}
+            {{ scope.row.store.chequeCount.total }}
           </span>
         </template>
       </el-table-column>
@@ -66,45 +61,40 @@
         <template slot-scope="scope">
           <span>{{ scope.row.status | statusFilter }}</span>
           /
-          {{ scope.row.store.healthStatus ? scope.row.store.healthStatus.status : ''}}
+          {{ scope.row.store.healthStatus ? scope.row.store.healthStatus.status : '' }}
         </template>
       </el-table-column>
 
-
-      <el-table-column label="操作" width="150" align="center">
+      <el-table-column label="操作" width="200" align="center">
         <template slot-scope="scope">
-          <el-button size="small" type="primary" 
+          <el-button
+            size="small" 
+            type="primary" 
             @click="alert('敬请期待')">提现</el-button>
+
+          <router-link :to="'/node/detail/'+scope.row.id">
+            <el-button size="small" type="primary" >查看详情</el-button>
+          </router-link>
         </template>
       </el-table-column>
     </el-table>
 <pagination v-show="page.total>0" :total="page.total" :page.sync="page.page" :limit.sync="page.size" @pagination="fetchData" />
 
-  <el-dialog v-el-drag-dialog :visible.sync="dialogVisible" title="编辑配置项" >
-      <el-form ref="editForm" :model="editForm" :rules="editFormValidate" autocomplete="on" label-width="120px">
-        <el-form-item label="配置项" prop="name">
-          <el-input v-model="editForm.name" disabled />
-        </el-form-item>
-        <el-form-item label="值" prop="value">
-          <el-input v-model="editForm.value" />
-        </el-form-item>
-        
-        <el-form-item>
-          <el-button type="primary" @click="updateConfig">提交</el-button>
-          <el-button @click="dialogVisible = false">关闭</el-button>
-        </el-form-item>
-      </el-form>
-    </el-dialog>
+  <el-dialog v-el-drag-dialog :visible.sync="dialogVisible" title="节点详情" >
+    
+  </el-dialog>
 
   </div>
 </template>
 
 <script>
-import { getNodePage } from '@/api/node'
+import { getNodePage, getNodeDetail } from '@/api/node'
 import Pagination from '@/components/Pagination' // secondary package based on el-pagination
 import elDragDialog from '@/directive/el-drag-dialog' // base on element-ui
+import NodeChequeList from './node_cheque_list'
 export default {
-  components: { Pagination },
+  components: { Pagination, NodeChequeList},
+  directtives: { elDragDialog },
   filters: {
     statusFilter(status) {
       const statusMap = {
@@ -140,12 +130,6 @@ export default {
       nodeStat: {
 
       },
-      editForm: {},
-      editFormValidate: {
-        value: [
-            { required: true, message: '请输入配置值' },
-          ],
-      },
       listLoading: true,
       dialogVisible: false
     }
@@ -169,30 +153,8 @@ export default {
         this.listLoading = false
       })
     },
-    editConfig(row) {
-      this.editForm = {
-        name: row.name,
-        code: row.code,
-        value: row.value
-      }
-      this.dialogVisible = true
-    },
+    
 
-    updateConfig() {
-      this.$refs.editForm.validate((valid) => {
-        if (valid) {
-          updateConfig(this.editForm.code, this.editForm.value).then((res) => {
-            this.$message({
-              message: '处理成功',
-              type: 'success'
-            })
-            this.fetchData()
-            this.dialogVisible = false
-          })
-        }
-      })
-      
-    }
   }
 }
 </script>
