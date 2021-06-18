@@ -19,22 +19,22 @@
 
       <el-table-column align="center" label="beneficiary">
         <template slot-scope="scope">
-          <span v-if="scope.row.lastreceived != null">{{scope.row.beneficiary}}</span>
-          <span v-if="scope.row.lastsent != null">{{scope.row.beneficiary}}</span>
+          <span v-if="scope.row.lastreceived != null">{{scope.row.lastreceived.beneficiary}}</span>
+          <span v-if="scope.row.lastsent != null">{{scope.row.lastsent.beneficiary}}</span>
         </template>
       </el-table-column>
 
       <el-table-column align="center" label="chequebook">
         <template slot-scope="scope">
-          <span v-if="scope.row.lastreceived != null">{{scope.row.chequebook}}</span>
-          <span v-if="scope.row.lastsent != null">{{scope.row.chequebook}}</span>
+          <span v-if="scope.row.lastreceived != null">{{scope.row.lastreceived.chequebook}}</span>
+          <span v-if="scope.row.lastsent != null">{{scope.row.lastsent.chequebook}}</span>
         </template>
       </el-table-column>
 
       <el-table-column align="center" label="payout">
         <template slot-scope="scope">
-          <span v-if="scope.row.lastreceived != null">{{scope.row.payout}}</span>
-          <span v-if="scope.row.lastsent != null">{{scope.row.payout}}</span>
+          <span v-if="scope.row.lastreceived != null">{{scope.row.lastreceived.payout}}</span>
+          <span v-if="scope.row.lastsent != null">{{scope.row.lastsent.payout}}</span>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" align="center">
@@ -65,31 +65,31 @@
     </el-dialog>
 
     <el-dialog v-el-drag-dialog :visible.sync="dialogCashoutResultVisible" title="查看结果" >
-      <div v-if="cashoutResultData.cashout != null">
-        <DescriptionList v-if="cashoutResultData.cashout.error" title="请求结果" col="24" :content="cashoutResultData.cashout">
-          <Description term="错误信息">{{ cashoutResultData.cashout.message }}</Description>
+      <div v-if="cashout != null">
+        <DescriptionList v-if="cashout.error" title="请求结果" col="24" :content="cashout">
+          <Description term="错误信息">{{ cashout.message }}</Description>
         </DescriptionList>
-        <DescriptionList v-if="!cashoutResultData.cashout.error" title="请求结果" col="12" :content="cashoutResultData.cashout">
-            <Description term="事务hash">{{ cashoutResultData.cashout.transactionHash }}</Description>
+        <DescriptionList v-if="!cashout.error" title="请求结果" col="12" :content="cashout">
+            <Description term="事务hash">{{ cashout.response.transactionHash }}</Description>
         </DescriptionList>
       </div>
-      <div v-if="cashoutResultData.cashoutResult != null">
-        <DescriptionList v-if="cashoutResultData.cashoutResult.error" title="提现结果" col="24" :content="cashoutResultData.cashoutResult">
-          <Description term="错误信息">{{ cashoutResultData.cashoutResult.message }}</Description>
+      <div v-if="cashoutResult != null">
+        <DescriptionList v-if="cashoutResult.error" title="提现结果" col="24" :content="cashoutResult">
+          <Description term="错误信息">{{ cashoutResult.message }}</Description>
         </DescriptionList>
         
-        <DescriptionList v-if="!cashoutResultData.cashoutResult.error" title="提现结果" col="12" :content="cashoutResultData.cashoutResult">
+        <DescriptionList v-if="!cashoutResult.error" title="提现结果" col="12" :content="cashoutResult">
 
-            <Description term="事务hash">{{ cashoutResultData.cashoutResult.transactionHash }}</Description>
-            <Description term="余额">{{ cashoutResultData.cashoutResult.uncashedAmount }}</Description>
+            <Description term="事务hash">{{ cashoutResult.response.transactionHash }}</Description>
+            <Description term="余额">{{ cashoutResult.response.uncashedAmount }}</Description>
 
-            <Description term="beneficiary">{{ cashoutResultData.cashoutResult.lastCashedCheque.beneficiary }}</Description>
-            <Description term="chequebook">{{ cashoutResultData.cashoutResult.lastCashedCheque.chequebook }}</Description>
-            <Description term="payout">{{ cashoutResultData.cashoutResult.lastCashedCheque.payout}}</Description>
+            <Description v-if="cashoutResult.response.lastCashedCheque != null" term="beneficiary">{{ cashoutResult.response.lastCashedCheque.beneficiary }}</Description>
+            <Description v-if="cashoutResult.response.lastCashedCheque != null" term="chequebook">{{ cashoutResult.response.lastCashedCheque.chequebook }}</Description>
+            <Description v-if="cashoutResult.response.lastCashedCheque != null" term="payout">{{ cashoutResult.response.lastCashedCheque.payout}}</Description>
 
-            <Description term="recipient">{{ cashoutResultData.cashoutResult.result.recipient }}</Description>
-            <Description term="lastPayout">{{ cashoutResultData.cashoutResult.result.lastPayout }}</Description>
-            <Description term="bounced">{{ cashoutResultData.cashoutResult.result.bounced }}</Description>
+            <Description v-if="cashoutResult.response.result != null" term="recipient">{{ cashoutResult.response.result.recipient }}</Description>
+            <Description v-if="cashoutResult.response.result != null" term="lastPayout">{{ cashoutResult.response.result.lastPayout }}</Description>
+            <Description v-if="cashoutResult.response.result != null" term="bounced">{{ cashoutResult.response.result.bounced }}</Description>
 
         </DescriptionList>
       </div>
@@ -120,10 +120,9 @@ export default {
       cashoutFormData: {
         gasPrice: ''
       },
-      cashoutResultData: {
-        cashout: null,
-        cashoutResult: null
-      },
+      cashout: null,
+      cashoutResult: null,
+      
       rules: {},
       dialogCashoutVisible: false,
       dialogCashoutResultVisible: false
@@ -138,6 +137,9 @@ export default {
       this.dialogCashoutVisible = true
     },
     cashout() {
+      if (this.cashoutFormData.gasPrice.length > 0) {
+        this.cashoutFormData.gasPrice = parseInt(this.cashoutFormData.gasPrice) * 1000000000
+      }
       submitCashout(this.nodeInfo.id, this.cashoutFormData.peer, this.cashoutFormData.gasPrice).then(res => {
         this.$message({
           message: '提交成功',
@@ -146,20 +148,20 @@ export default {
       })
     },
     showCashoutResult(row) {
-      this.cashoutResultData.peer = row.peer
+      this.peer = row.peer
       this.refreshCashoutResult()
       this.dialogCashoutResultVisible = true
     },
     refreshCashoutResult() {
-      getCashoutResult(this.nodeInfo.id, this.cashoutResultData.peer).then(res => {
+      getCashoutResult(this.nodeInfo.id, this.peer).then(res => {
           if (res.result.isOffline) {
             this.$message({
               message: '节点不在线，无法获取最新数据',
               type: 'warn'
             })
           }
-          this.cashoutResultData.cashout = res.result.cashout
-          this.cashoutResultData.cashoutResult = res.result.cashoutResult
+          this.cashout = res.result.cashout
+          this.cashoutResult = res.result.cashoutResult
       })
     }
   }
